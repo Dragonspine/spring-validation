@@ -1,0 +1,58 @@
+package hello.itemservice.web.validation;
+
+import hello.itemservice.domain.item.Item;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+import org.springframework.validation.Errors;
+import org.springframework.validation.Validator;
+
+/**
+ * packageName    : hello.itemservice.web.validation
+ * fileName       : ItemValidator
+ * author         : kanghyun Kim
+ * date           : 2022/09/21
+ * description    :
+ * ===========================================================
+ * DATE              AUTHOR             NOTE
+ * -----------------------------------------------------------
+ * 2022/09/21        kanghyun Kim      최초 생성
+ */
+@Slf4j
+@Component
+public class ItemValidator implements Validator {
+
+    @Override
+    // 검증기를 지원하느냐
+    public boolean supports(Class<?> clazz) {
+        return Item.class.isAssignableFrom(clazz); // 자식클래스까지 커버 가능
+        //item == clazz
+        //item == subItem
+    }
+
+    @Override
+    // 실제 검증
+    public void validate(Object target, Errors errors) {
+        Item item = (Item) target;
+
+        //검증로직
+        if (!StringUtils.hasText(item.getItemName())) {
+            errors.rejectValue("itemName", "required");
+        }
+        //        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "itemName", "required");
+        if (item.getPrice() == null || item.getPrice() < 1000 || item.getPrice() > 1000000) {
+            errors.rejectValue("price", "range", new Object[]{1000, 1000000}, null);
+        }
+        if (item.getQuantity() == null || item.getQuantity() >= 9999){
+            errors.rejectValue("quantity", "max", new Object[]{9999}, null);
+        }
+
+        //특정 필드가 아닌 복합 룰 검증
+        if (item.getPrice() != null && item.getQuantity() != null) {
+            int resultPrice = item.getPrice() * item.getQuantity();
+            if (resultPrice < 10000) {
+                errors.reject("totalPriceMin", new Object[]{10000, resultPrice}, null);
+            }
+        }
+    }
+}
